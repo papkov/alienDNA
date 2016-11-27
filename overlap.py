@@ -1,3 +1,4 @@
+from igraph import *
 
 def overlap(s1, s2):
     """
@@ -13,57 +14,89 @@ def overlap(s1, s2):
     None
     """
     maxoverlap = 0
-    forward = False
-    # Swap strings: s1 should be the shortest one
-    if s1 > s2:
-        s1, s2 = s2, s1
+    # forward = False
+    # # Swap strings: s1 should be the shortest one
+    # if s1 > s2:
+    #     s1, s2 = s2, s1
 
     # TODO: reverse directions
+    # Backward
+    # for i in range(1, len(s1)):
+    #     # print(s1[:i], s2[-i:])
+    #     if s1[:i] == s2[-i:] and i > maxoverlap:
+    #         maxoverlap = i
+    #         forward = False
     # Forward
     for i in range(1, len(s1)):
-        # print(s1[:i], s2[-i:])
-        if s1[:i] == s2[-i:] and i > maxoverlap:
-            maxoverlap = i
-            forward = True
-    # Backward
-    for i in range(1, len(s1)):
         # print(s2[:i], s1[-i:])
+        if i == len(s2):
+            break
         if s2[:i] == s1[-i:] and i > maxoverlap:
             maxoverlap = i
-            forward = False
+            # forward = True
 
     # If there is no overlap
-    if maxoverlap == 0:
-        return None, maxoverlap
-
-    if forward:
-        return s2 + s1[maxoverlap:], maxoverlap
-    else:
-        return s1[:maxoverlap+1] + s2, maxoverlap
+    return maxoverlap
 
 
 def maximal_overlap(s, string_list):
-    best_overlap, maxlength = None, 0
+    maxlength = 0
     index = 0
     for i, string in enumerate(string_list):
-        common, length = overlap(s, string.strip())
+        if s == string:
+            continue
+
+        length = overlap(s, string)
         if length > maxlength:
-            best_overlap = common
             maxlength = length
             index = i
-    return best_overlap, index
+
+    return index, maxlength
 
 
-def assemble(string_list):
-    current_string = string_list[0].strip()
-    del string_list[0]
-    for i in range(len(string_list)):
-        current_string, index = maximal_overlap(current_string, string_list)
-        del string_list[index]
-        print(index, len(current_string))
+def build_graph(reads):
+    graph = Graph(n=len(reads), directed=True)
+    graph.vs["name"] = reads
+    graph.es["weight"] = -1
+    for i in range(len(reads)):
+        j, overlap_length = maximal_overlap(reads[i], reads)
+        print("Read %s overlaps read %s on %s position" % (i, j, overlap_length))
+        if overlap_length == 0:
+            continue
+        graph.add_edge(i, j)
+        graph[i, j] = overlap_length
 
-    return current_string
+    print("Graph was built")
+    return graph
 
+
+def get_initial_vertices(graph):
+    degrees = graph.degree(mode=IN)
+    initial = []
+    for i, d in enumerate(degrees):
+        if d == 0:
+            initial.append(i)
+    return initial
+
+
+def assemble(graph):
+    initial = get_initial_vertices(graph)
+    print("Start points:", initial)
+    chains = []
+    for i in initial:
+        current_vertex = [i]
+        seq = graph.vs[i]["name"]
+        next_vertex = graph.neighbors(i, mode=OUT)
+        print("%s" % i, end='')
+        while next_vertex:
+            print(" -> %s" % next_vertex[0], end='')
+            overlap = graph[current_vertex[0], next_vertex[0]]
+            seq += graph.vs["name"][next_vertex[0]][overlap:]
+
+            current_vertex = next_vertex
+            next_vertex = graph.neighbors(next_vertex[0], mode=OUT)
+        chains.append(seq)
+    return chains
 
 if __name__ == '__main__':
 
@@ -76,9 +109,13 @@ if __name__ == '__main__':
     print(overlap(s2, s3))
     print(overlap(s1, 'EFG'))
 
-    print(assemble([s1, s2, s3]))
+    g = build_graph([s1, s2, s3])
+    print(g)
+    print(assemble(g))
 
-    g1 = 'BIBTSTNOBNTNBSNBNTNSISITNIBBITBNIITOOSNNTNBOINOSNNOOBTBOTTITNSONNSBSBNINNNSNBBBTNSISSTONIITBSISONBBTOBINBISOTTONBNBNIOBOTITIONBNTSBNNIOTBBSTBNNISTNNSIOI'
-    g392 = 'NOOBNTNONOBBIBBBNTNBNIBNNBIBNOBSNBTSNTSTTIBBBIOBSISIOTNBONTBNSSSTTTSTNONTSTTTBSBNIBBIBOTSNINNOISBBSOTNNTTNBBNTNTNONBONIIITIOTISITNSTTNBNIOONIOOTISNNNNSOB'
+    # plot(g)
 
-    print(overlap(g1, g392))
+    # g1 = 'BIBTSTNOBNTNBSNBNTNSISITNIBBITBNIITOOSNNTNBOINOSNNOOBTBOTTITNSONNSBSBNINNNSNBBBTNSISSTONIITBSISONBBTOBINBISOTTONBNBNIOBOTITIONBNTSBNNIOTBBSTBNNISTNNSIOI'
+    # g392 = 'NOOBNTNONOBBIBBBNTNBNIBNNBIBNOBSNBTSNTSTTIBBBIOBSISIOTNBONTBNSSSTTTSTNONTSTTTBSBNIBBIBOTSNINNOISBBSOTNNTTNBBNTNTNONBONIIITIOTISITNSTTNBNIOONIOOTISNNNNSOB'
+    #
+    # print(overlap(g1, g392))
