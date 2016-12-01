@@ -1,52 +1,26 @@
 from igraph import *
 
-def overlap(s1, s2):
-    """
-    :param s1: first string
-    :param s2: second string
-    :return: string which two input strings are substrings of or the longest string if there is no overlap
 
-    >>> overlap('ABCDEFG', 'EFGHIJK')
-    ABCDEFGHIJK
-    >>> overlap('ABCDEFG', 'QWERTABC')
-    QWERTABCDEFG
-    >>> overlap('EFGHIJK', 'QWERTABC')
-    None
-    """
-    maxoverlap = 0
-    # forward = False
-    # # Swap strings: s1 should be the shortest one
-    # if s1 > s2:
-    #     s1, s2 = s2, s1
-
-    # TODO: reverse directions
-    # Backward
-    # for i in range(1, len(s1)):
-    #     # print(s1[:i], s2[-i:])
-    #     if s1[:i] == s2[-i:] and i > maxoverlap:
-    #         maxoverlap = i
-    #         forward = False
-    # Forward
-    for i in range(1, len(s1)):
-        # print(s2[:i], s1[-i:])
-        if i == len(s2):
-            break
-        if s2[:i] == s1[-i:] and i > maxoverlap:
-            maxoverlap = i
-            # forward = True
-
-    # If there is no overlap
-    return maxoverlap
+def overlap(s1, s2, minoverlap):
+    position = minoverlap
+    while position < len(s2):
+        position = s1.find(s2[:minoverlap], position)
+        if position == -1:
+            return 0
+        elif s2.startswith(s1[position:]):
+            return len(s1) - position
+        position += 1
+    return 0
 
 
-def maximal_overlap(s, string_list, miss_list):
+def maximal_overlap(s, string_list):
     maxlength = 0
     index = 0
     for i, string in enumerate(string_list):
-        if s == string or i in miss_list:
+        if s == string:
             continue
 
-        length = overlap(s, string)
+        length = overlap(s, string, 5)
         if length > maxlength:
             maxlength = length
             index = i
@@ -58,15 +32,13 @@ def build_graph(reads):
     graph = Graph(n=len(reads), directed=True)
     graph.vs["name"] = reads
     graph.es["weight"] = -1
-    full_nodes = []
     for i in range(len(reads)):
-        j, overlap_length = maximal_overlap(reads[i], reads, full_nodes)
+        j, overlap_length = maximal_overlap(reads[i], reads)
         print("Read %s overlaps read %s on %s position" % (i, j, overlap_length))
         if overlap_length == 0:
             continue
         graph.add_edge(i, j)
         graph[i, j] = overlap_length
-        full_nodes.append(j)
 
     print("Graph was built")
     return graph
@@ -102,8 +74,18 @@ def assemble(graph):
     # Strings that do all the work
     diameter = graph.get_diameter()
     dna = "".join([graph.vs["name"][diameter[0]]] + [graph.vs["name"][v][graph[diameter[i], diameter[i + 1]]:] for i, v in enumerate(diameter[1:])])
+    validate_assembling(dna, graph.vs["name"])
     # ["%s - %s%%" % (nucl, count_content(nucl, dna)) for nucl in set(dna)]
     return dna
+
+def validate_assembling(strand, reads):
+    for read in reads:
+        if read not in strand:
+            print("ERROR:", read)
+            return False
+    print("All reads are in strand")
+    return True
+
 
 def count_content(nucl, strand):
     return strand.count(nucl) / len(strand) * 100

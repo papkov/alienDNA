@@ -5,10 +5,10 @@ with open('data/test.dna', 'r') as f:
     reads = [line.strip() for line in f.readlines()]
     g = build_graph(reads)
     print(g.summary())
-    plot(g)
+    # plot(g)
     alien = assemble(g)
 
     print(alien)
 
-    with open('output/assembled_test.dna', 'w') as out:
+    with open('output/assembled_test_1.dna', 'w') as out:
         out.writelines(alien)
