@@ -13,14 +13,14 @@ def overlap(s1, s2, minoverlap):
     return 0
 
 
-def maximal_overlap(s, string_list):
+def maximal_overlap(s, string_list, minoverlap):
     maxlength = 0
     index = 0
     for i, string in enumerate(string_list):
         if s == string:
             continue
 
-        length = overlap(s, string, 5)
+        length = overlap(s, string, minoverlap)
         if length > maxlength:
             maxlength = length
             index = i
@@ -28,12 +28,12 @@ def maximal_overlap(s, string_list):
     return index, maxlength
 
 
-def build_graph(reads):
+def build_graph(reads, minoverlap):
     graph = Graph(n=len(reads), directed=True)
     graph.vs["name"] = reads
     graph.es["weight"] = -1
     for i in range(len(reads)):
-        j, overlap_length = maximal_overlap(reads[i], reads)
+        j, overlap_length = maximal_overlap(reads[i], reads, minoverlap)
         print("Read %s overlaps read %s on %s position" % (i, j, overlap_length))
         if overlap_length == 0:
             continue
@@ -70,6 +70,17 @@ def assemble(graph):
     #         current_vertex = next_vertex
     #         next_vertex = graph.neighbors(next_vertex[0], mode=OUT)
     #     chains.append(seq)
+
+    # g.to_undirected()
+    # subgraphs = g.decompose()
+    # chromosomes = [assemble(g) for g in subgraphs]
+    # [sub.diameter() for sub in subgraphs]
+
+    # Drawing
+    # visual = {}
+    # visual["vertex_size"] = 1
+    # [plot(g, target='chomosome%s.png' % i, **visual) for i, g in enumerate(subgraphs)]
+
 
     # Strings that do all the work
     diameter = graph.get_diameter()
