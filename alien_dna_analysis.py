@@ -33,11 +33,14 @@ for i, subgraph in enumerate(subgraphs):
     if is_cyclic(subgraph):
         print("This graph is cyclic")
         path_in_subgraph = get_cyclic_path(subgraph)
-        path = convert_path(path_in_subgraph, subgraph, g)
-        dna = assemble_by_path(g, path)
     else:
-        path_in_subgraph = subgraph.get_diameter()
-        path = convert_path(path_in_subgraph, subgraph, g)
-        dna = assemble_by_path(g, path)
+        path_in_subgraph = subgraph.get_diameter()\
+
+    path = convert_path(path_in_subgraph, subgraph, g)
+    dna = assemble_by_path(g, path)
+    # If all reads from subgraph are in strand, save chromosome
+    if validate_assembling(dna, subgraph.vs['name'], path_in_subgraph):
+        with open('output/assembled_chromosome%s' % i, 'w') as f:
+            f.write(dna)
     print("Assembled %s nucleotides\n" % (len(dna)))
     strands.append(dna)

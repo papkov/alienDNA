@@ -81,9 +81,10 @@ def assemble_by_path(graph, path):
         reads_without_overlaps.append(reads[current][overlap:])
 
         o_sum += overlap
+        if overlap < 30:
+            print("Small overlap detected: node %s - %s nucleotides" % (current, overlap))
     print('Overlap sum: %s' % o_sum)
     dna = "".join(reads_without_overlaps)
-    validate_assembling(dna, reads, path)
     return dna
 
 
@@ -117,10 +118,11 @@ def get_cyclic_path(graph):
     path = [graph.vs[0].index]
     while True:
         neighbours = graph.vs[path[-1]].neighbors()
-        if neighbours[0].index not in path:
-            next_node = neighbours[0].index
-        elif neighbours[1].index not in path:
-            next_node = neighbours[1].index
+        for n in neighbours:
+            if n.index not in path:
+                next_node = n.index
+                break
+        # If all neighbours are in path already
         else:
             return path
         path.append(next_node)
@@ -128,6 +130,12 @@ def get_cyclic_path(graph):
 
 def convert_path(path_in_subgraph, subgraph, mother_graph):
     names = [subgraph.vs[v]['name'] for v in path_in_subgraph]
+    vertices_ind = [v.index for v in subgraph.vs]
+
+    # Check if path if full
+    missing = list(set(vertices_ind) - set(path_in_subgraph))
+    if missing:
+        print('Path does not content %s vertices:' % len(missing), missing)
     return [mother_graph.vs.find(name=name_).index for name_ in names]
 
 # if __name__ == '__main__':

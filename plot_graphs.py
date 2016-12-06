@@ -13,5 +13,10 @@ def plot_graph(graph, file=""):
     return plot(graph, **visual)
 
 
-def plot_graphs(graphs):
-    return [plot_graph(g, file='chromosome%s.svg' % i) for i, g in enumerate(graphs)]
+def plot_graphs(graphs, common_name):
+    return [plot_graph(g, file='%s%s.svg' % (common_name, i)) for i, g in enumerate(graphs)]
+
+
+def plot_simplified(graph):
+    g = graph.copy()
+
