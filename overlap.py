@@ -14,18 +14,17 @@ def overlap(s1, s2, minoverlap):
 
 
 def maximal_overlap(s, string_list, minoverlap):
-    maxlength = 0
-    index = 0
+    overlaps = []
+
     for i, string in enumerate(string_list):
         if s == string:
             continue
 
         length = overlap(s, string, minoverlap)
-        if length > maxlength:
-            maxlength = length
-            index = i
+        if length != 0:
+            overlaps.append((i, length))
 
-    return index, maxlength
+    return overlaps
 
 
 def build_graph(reads, minoverlap):
@@ -33,12 +32,13 @@ def build_graph(reads, minoverlap):
     graph.vs["name"] = reads
     graph.es["weight"] = -1
     for i in range(len(reads)):
-        j, overlap_length = maximal_overlap(reads[i], reads, minoverlap)
-        print("Read %s overlaps read %s on %s position" % (i, j, overlap_length))
-        if overlap_length == 0:
-            continue
-        graph.add_edge(i, j)
-        graph[i, j] = overlap_length
+        overlaps = maximal_overlap(reads[i], reads, minoverlap)
+        for o in overlaps:
+            print("Read %s overlaps read %s on %s position" % (i, o[0], o[1]))
+            if o[1] == 0:
+                continue
+            graph.add_edge(i, o[0])
+            graph[i, o[0]] = o[1]
 
     print("Graph was built")
     return graph
@@ -137,6 +137,63 @@ def convert_path(path_in_subgraph, subgraph, mother_graph):
     if missing:
         print('Path does not content %s vertices:' % len(missing), missing)
     return [mother_graph.vs.find(name=name_).index for name_ in names]
+
+
+def simplify(graph):
+    g = graph.copy()
+    redundant_vertices = set()
+    for v in g.vs.select(_degree_ne=2):
+        # print(j, len(redundant_vertices))
+        print(v.index)
+        if v.index in redundant_vertices:
+            continue
+
+        this_v = v
+        next_v = this_v.neighbors(mode=OUT)
+        # print(next_v)
+        while len(next_v) == 1:
+            # if next_v[0].index in redundant_vertices:
+            #     break
+
+            try:
+                edge = g.get_eid(this_v.index, next_v[0].index)
+            except InternalError:
+                print('There is no edge %s -> %s' % (this_v.index, next_v[0].index))
+                break
+
+            overlap = int(g.es[edge]['weight'])
+            v['name'] += next_v[0]['name'][overlap:]
+
+            if this_v.index != v.index:
+                redundant_vertices.add(this_v.index)
+            this_v = next_v[0]
+            next_v = this_v.neighbors(mode=OUT)
+
+        # There was more than one step
+        # if v.neighbors(mode=OUT)[0].index != this_v.index:
+        # g.add_edge(v.index, this_v.index)
+        # g.vs[v.index]['name'] = temp_strand
+        # print('%s redundant vertices will be removed' % len(redundant_vertices))
+
+        # Remove redundant vertices
+    print('%s redundant vertices will be removed' % len(redundant_vertices))
+    g.delete_vertices(list(redundant_vertices))
+    print(len(g.vs.select(_degree_eq=2)))
+    return g
+
+
+def find_closest_important_node(g, start):
+    path = []
+    if start not in g.vs.index:
+        print('There is no such node')
+        return path
+    this_node = start
+    next_node = g.neighbors(mode=IN)
+    while len(next_node) == 1:
+        if this_node != start:
+            path.append(this_node)
+    return path
+
 
 # if __name__ == '__main__':
 #

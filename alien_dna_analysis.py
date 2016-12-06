@@ -6,11 +6,12 @@ from overlap import *
 #     g = build_graph(reads, 40)
 #     # Remove weak edges
 #     g.delete_edges([i for i, w in enumerate(g.es['weight']) if w < 20])
-#     g.write_graphmlz('output/alien_graph_1.gmlz')
+#     g.write_graphmlz('output/alien_graph_full.gmlz')
 
 
 # Loading graph
-g = Graph.Read_GraphMLz('output/alien_graph.gmlz')
+# g = Graph.Read_GraphMLz('output/alien_graph.gmlz')
+g = Graph.Read_GraphMLz('output/alien_graph_full.gmlz')
 # g = Graph.Read_GraphMLz('output/test_graph.gmlz')
 print('Graph was loaded.')
 
